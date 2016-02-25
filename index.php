@@ -69,10 +69,12 @@ function read_cache($filename) {
         $file = fopen($filename, 'r');
 
         if ($file_length > 0) {
-            $results_array = fread($file, $file_length);
+            $results_array = unserialize(fread($file, $file_length));
             fclose($file);
 
-            return unserialize($results_array);
+            $results_array['timestamp'] = filemtime($filename);
+
+            return $results_array;
         } else {
             return array();
         }
@@ -84,9 +86,19 @@ function read_cache($filename) {
 function build_items_index() {
     $items = glob(get_cache_filename('item/*'));
 
-    foreach ($items as $item) {
-        print_r($item);
+    foreach ($items as $item_cache_path) {
+        $item = read_cache($item_cache_path);
+
+        $items_date[$item['timestamp'] . $item['sha1']] = $item;
     }
+
+    ksort($items_date);
+
+    while (count($items_date) > 100) {
+        array_pop($items_date);
+    }
+
+    put_cache('index/items_date', $items_date);
 }
 
 function hash_it($string) {
@@ -125,6 +137,12 @@ function get_item($item_hash) {
     }
 }
 
+function get_items() {
+    $items = get_cache('index/items_date');
+
+    return $items;
+}
+
 function template_header($title) {
     echo('<html><head><title>');
     echo(htmlspecialchars($title));
@@ -158,17 +176,19 @@ if (isset($_POST) && count($_POST)) {
     }
 }
 
-if (!$action) {
-    if (isset($_GET['action'])) {
-        switch ($_GET['action']) {
-            case 'item':
-            case 'feed':
-                $action = $_GET['action'];
-                break;
-            default:
-                unset($action);
-        }
+if (isset($_GET['action'])) {
+    switch ($_GET['action']) {
+        case 'item':
+        case 'feed':
+            $action = $_GET['action'];
+            break;
+        default:
+            unset($action);
     }
+}
+
+if (!isset($action)) {
+    $action = 'index';
 }
 
 if ($action === 'item') {
@@ -193,9 +213,16 @@ if ($action === 'item') {
         template_footer();
     }
 } else {
+    build_items_index();
+
     $items = get_items();
 
     template_header('index');
+
+    foreach ($items as $item) {
+        template_item($item);
+    }
+
     template_submit_form();
     template_footer();
 }
