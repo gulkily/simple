@@ -212,6 +212,17 @@ if ($action === 'item') {
         echo($link);
         template_footer();
     }
+} elseif ($action === 'feed') {
+    $items = get_items();
+
+    header('Content-Type: application/json');
+
+    $client = $_SERVER['REMOTE_ADDR'];
+    $client_hash = hash_it($client);
+
+    put_cache('node/' . $client_hash, array($client));
+
+    echo(json_encode($items));
 } else {
     build_items_index();
 
