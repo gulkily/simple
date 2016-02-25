@@ -1,0 +1,201 @@
+<?php
+
+define("CACHE_PATH", "./cache");
+
+function get_cache_filename($cache_name) {
+    return CACHE_PATH . (substr($cache_name,0,1)=='/'?'':'/') . $cache_name;
+}
+
+function put_cache($cache_name, $object, $nest_level = 0) {
+    if ($nest_level > 10) {
+        trigger_error('put_cache() went more than 10 levels deep.', E_USER_ERROR);
+    }
+
+    $filename = get_cache_filename($cache_name);
+
+    if (is_dir($filename)) {
+        trigger_error('put_cache() we have a problem, the file we are trying to create is already a directory', E_USER_ERROR);
+        // @todo
+    }
+
+    $tmp = getmypid().'.tmp';
+
+    $object_s = serialize($object);
+    $file = @fopen($filename.$tmp, 'w');
+
+    if (!$file) {
+        // if we don't have a handle, we probably need to create some directories
+        $path = $filename;
+        while (!$file && $path != '') {
+            $path = explode('/', $path);
+            array_pop($path);
+            $path = implode('/', $path);
+
+            // clobber any files while creating directories
+            if (file_exists($path)) {
+                unlink($path);
+            }
+
+            mkdir($path, 0777);
+            $file = @fopen($filename.$tmp, 'w');
+        }
+
+        if (!$file) {
+            // now that we have a directory and a file handle, try again
+            put_cache($cache_name, $object, $nest_level+1);
+        }
+    }
+
+    if ($file) {
+        fwrite($file, $object_s);
+        fclose($file);
+        rename($filename.$tmp, $filename);
+    }
+}
+
+function get_cache($cache_name) {
+    if ($cache_name) {
+        $filename = get_cache_filename($cache_name);
+    } else {
+        trigger_error('get_cache() $cache_name should never be false here.', E_USER_ERROR);
+    }
+
+    return read_cache($filename);
+}
+
+function read_cache($filename) {
+    if (file_exists($filename)) {
+        $file_length = filesize($filename);
+        $file = fopen($filename, 'r');
+
+        if ($file_length > 0) {
+            $results_array = fread($file, $file_length);
+            fclose($file);
+
+            return unserialize($results_array);
+        } else {
+            return array();
+        }
+    } else {
+        return null;
+    }
+}
+
+function build_items_index() {
+    $items = glob(get_cache_filename('item/*'));
+
+    foreach ($items as $item) {
+        print_r($item);
+    }
+}
+
+function hash_it($string) {
+    return sha1($string);
+}
+
+function is_hash($string) {
+    return (bool) preg_match('/^[0-9a-f]{40}$/i', $string);
+}
+
+function save_item($item_text, $item_source = "localhost") {
+    $item_hash = hash_it($item_text);
+
+    if (get_cache('item/' . $item_hash)) {
+        return $item_hash;
+    } else {
+        $item_source = hash_it($item_source);
+
+        $item['text'] = $item_text;
+        $item['source'] = $item_source;
+        $item['sha1'] = $item_hash;
+
+        put_cache('item/' . $item_hash,  $item);
+
+        return $item_hash;
+    }
+}
+
+function get_item($item_hash) {
+    if (!is_hash($item_hash)) {
+        return;
+    } else {
+        $item = get_cache('item/' . $item_hash);
+
+        return $item;
+    }
+}
+
+function template_header($title) {
+    echo('<html><head><title>');
+    echo(htmlspecialchars($title));
+    echo('</title></head><body>');
+}
+
+function template_footer() {
+    echo('</body></html>');
+}
+
+function template_submit_form() {
+    echo('<form action="./" method="post">');
+    echo('<p><textarea name="text" cols="80" rows="5" id="text" tabindex="1"></textarea></p>');
+    echo('<p><input type="submit" value="Submit" tabindex="2"></p>');
+    echo('</form>');
+}
+
+function template_item($item) {
+    echo('<p>');
+    echo(nl2br(htmlspecialchars(trim($item['text']))));
+    echo('<br>');
+    echo($item['sha1']);
+    echo('</p>');
+}
+
+if (isset($_POST) && count($_POST)) {
+    if ($_POST['text']) {
+        $text = $_POST['text'];
+        $item_hash = save_item($text);
+        $action = 'item_new';
+    }
+}
+
+if (!$action) {
+    if (isset($_GET['action'])) {
+        switch ($_GET['action']) {
+            case 'item':
+            case 'feed':
+                $action = $_GET['action'];
+                break;
+            default:
+                unset($action);
+        }
+    }
+}
+
+if ($action === 'item') {
+    $item_hash = $_GET['item'];
+
+    if (is_hash($item_hash)) {
+        $item = get_item($item_hash);
+
+        if ($item) {
+            template_header($item_hash);
+            template_item($item);
+            template_footer();
+        }
+    }
+} elseif ($action === 'item_new') {
+    if (is_hash($item_hash)) {
+        $new_item_url = './?action=item&item=' . $item_hash;
+        $link = '<a href="' . $new_item_url . '">' . $item_hash . '</a>';
+
+        template_header('redirecting to ' . $item_hash);
+        echo($link);
+        template_footer();
+    }
+} else {
+    $items = get_items();
+
+    template_header('index');
+    template_submit_form();
+    template_footer();
+}
