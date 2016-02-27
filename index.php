@@ -127,6 +127,10 @@ function save_item($item_text, $item_source = "localhost") {
     }
 }
 
+function delete_item($item_hash) {
+
+}
+
 function get_item($item_hash) {
     if (!is_hash($item_hash)) {
         return;
@@ -171,8 +175,17 @@ function template_item($item) {
 if (isset($_POST) && count($_POST)) {
     if ($_POST['text']) {
         $text = $_POST['text'];
-        $item_hash = save_item($text);
-        $action = 'item_new';
+
+        $url_regex = '/((https:\/\/|ftp:\/\/|ftp\.|http:\/\/|www\.)[a-zA-Z0-9\.\/\?=%&\-,;~_#:@\'()\[\]`*\|\+\^\{\}]+[a-zA-Z0-9\/#])/';
+        $url_parse_regex = '/^((http[s]?|ftp):\/)?\/?([^:\/\s]+)((\/\w+)*\/)([\w\-\.]+[^#?\s]+)(.*)?(#[\w\-]+)?$/';
+
+        preg_match_all($url_regex, $text, $url_matches);
+        if (count($url_matches[0])) {
+            $action = 'index';
+        } else {
+            $item_hash = save_item($text);
+            $action = 'item_new';
+        }
     }
 }
 
