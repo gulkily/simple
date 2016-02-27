@@ -168,7 +168,7 @@ function template_item($item) {
     echo('<p>');
     echo(nl2br(htmlspecialchars(trim($item['text']))));
     echo('<br>');
-    echo($item['sha1']);
+    echo('<a href="./?action=item&item="' . $item['sha1'] . '">' . $item['sha1'] . '</a>');
     echo('</p>');
 }
 
