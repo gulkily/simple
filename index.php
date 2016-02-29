@@ -128,7 +128,15 @@ function save_item($item_text, $item_source = "localhost") {
 }
 
 function delete_item($item_hash) {
+    if (is_hash($item_hash)) {
+        $item = get_item($item_hash);
 
+        if (count($item)) {
+            $cache_filename = get_cache_filename('item/' . $item_hash);
+
+            unlink($cache_filename);
+        }
+    }
 }
 
 function get_item($item_hash) {
@@ -147,10 +155,16 @@ function get_items() {
     return $items;
 }
 
+function html_escape($string) {
+    return htmlspecialchars(trim($string), ENT_COMPAT|ENT_SUBSTITUTE, "UTF-8");
+}
+
 function template_header($title) {
     echo('<html><head><title>');
-    echo(htmlspecialchars($title));
+    echo(html_escape($title));
     echo('</title></head><body>');
+    echo('<h1>' . html_escape($title) . '</h1>');
+    echo('<a href="./">Home</a>');
 }
 
 function template_footer() {
@@ -166,9 +180,9 @@ function template_submit_form() {
 
 function template_item($item) {
     echo('<p>');
-    echo(nl2br(htmlspecialchars(trim($item['text']))));
-    echo('<br>');
-    echo('<a href="./?action=item&item="' . $item['sha1'] . '">' . $item['sha1'] . '</a>');
+    echo(nl2br(html_escape($item['text'])));
+    echo('<hr>');
+    echo('<a href="./?action=item&amp;item=' . $item['sha1'] . '">' . $item['sha1'] . '</a>');
     echo('</p>');
 }
 
@@ -189,7 +203,7 @@ if (isset($_POST) && count($_POST)) {
     }
 }
 
-if (isset($_GET['action'])) {
+if (!isset($action) && isset($_GET['action'])) {
     switch ($_GET['action']) {
         case 'item':
         case 'feed':
