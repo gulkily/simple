@@ -56,11 +56,13 @@ function put_cache($cache_name, $object, $nest_level = 0) {
 function get_cache($cache_name) {
     if ($cache_name) {
         $filename = get_cache_filename($cache_name);
+
+        return read_cache($filename);
     } else {
         trigger_error('get_cache() $cache_name should never be false here.', E_USER_ERROR);
-    }
 
-    return read_cache($filename);
+        return null;
+    }
 }
 
 function read_cache($filename) {
@@ -141,7 +143,9 @@ function delete_item($item_hash) {
 
 function get_item($item_hash) {
     if (!is_hash($item_hash)) {
-        return;
+        trigger_error('get_item() called with an invalid hash', E_USER_ERROR);
+
+        return null;
     } else {
         $item = get_cache('item/' . $item_hash);
 
@@ -231,7 +235,7 @@ if ($action === 'item') {
         }
     }
 } elseif ($action === 'item_new') {
-    if (is_hash($item_hash)) {
+    if (isset($item_hash) && is_hash($item_hash)) {
         $new_item_url = './?action=item&item=' . $item_hash;
         $link = '<a href="' . $new_item_url . '">' . $item_hash . '</a>';
 
