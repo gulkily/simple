@@ -2,6 +2,15 @@
 
 define("CACHE_PATH", "./cache");
 
+header("Content-Type: text/html; charset=utf-8");
+ini_set("default_charset", 'utf-8');
+
+if ($_SERVER['REMOTE_ADDR'] == '::1' || $_SERVER['REMOTE_ADDR'] == '127.0.0.1') {
+    $admin_mode = 1;
+} else {
+    $admin_mode = 0;
+}
+
 function get_cache_filename($cache_name) {
     return CACHE_PATH . (substr($cache_name,0,1)=='/'?'':'/') . $cache_name;
 }
@@ -160,7 +169,8 @@ function get_items() {
 }
 
 function html_escape($string) {
-    return htmlspecialchars(trim($string), ENT_COMPAT|ENT_SUBSTITUTE, "UTF-8");
+    //return htmlspecialchars(trim($string));
+    return $string;
 }
 
 function template_header($title) {
