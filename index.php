@@ -11,6 +11,14 @@ if ($_SERVER['REMOTE_ADDR'] == '::1' || $_SERVER['REMOTE_ADDR'] == '127.0.0.1') 
     $admin_mode = 0;
 }
 
+function sanitize_string($string) {
+    $allowed_chars = "/[^a-zA-Z0-9]+/";
+
+    $result = preg_replace($allowed_chars, "", $string);
+
+    return $result;
+}
+
 function get_cache_filename($cache_name) {
     return CACHE_PATH . (substr($cache_name,0,1)=='/'?'':'/') . $cache_name;
 }
