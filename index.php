@@ -12,7 +12,7 @@ if ($_SERVER['REMOTE_ADDR'] == '::1' || $_SERVER['REMOTE_ADDR'] == '127.0.0.1') 
 }
 
 function sanitize_string($string) {
-    $allowed_chars = "/[^a-zA-Z0-9]+/";
+    $allowed_chars = "/[^a-zA-Z0-9а-яА-Я;,!-:'\"]+/";
 
     $result = preg_replace($allowed_chars, "", $string);
 
@@ -129,6 +129,8 @@ function is_hash($string) {
 }
 
 function save_item($item_text, $item_source = "localhost") {
+    $item_text = sanitize_string($item_text);
+
     $item_hash = hash_it($item_text);
 
     if (get_cache('item/' . $item_hash)) {
