@@ -260,7 +260,9 @@ if ($action === 'item') {
         $link = '<a href="' . $new_item_url . '">' . $item_hash . '</a>';
 
         template_header('redirecting to ' . $item_hash);
+	echo('<p>');
         echo($link);
+	echo('</p>');
         template_footer();
     }
 } elseif ($action === 'feed') {
