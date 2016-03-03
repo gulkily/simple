@@ -12,7 +12,7 @@ if ($_SERVER['REMOTE_ADDR'] == '::1' || $_SERVER['REMOTE_ADDR'] == '127.0.0.1') 
 }
 
 function sanitize_string($string) {
-    $allowed_chars = "/[^a-zA-Z0-9;,!-:'\"\n]+/";
+    $allowed_chars = "/[^a-zA-Z0-9;,!-:'\"\n\ ]+/";
 
     $result = preg_replace($allowed_chars, "", $string);
 
