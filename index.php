@@ -170,6 +170,18 @@ function get_item($item_hash) {
     }
 }
 
+function item_exists($item_hash) {
+    if (!is_hash($item_hash)) {
+        return false;
+    } else {
+        if (file_exists(get_cache_filename('item/' . $item_hash))) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+}
+
 function get_items() {
     $items = get_cache('index/items_date');
 
