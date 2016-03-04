@@ -277,7 +277,9 @@ if ($action === 'item') {
         $new_item_url = './?action=item&item=' . $item_hash;
         $link = '<a href="' . $new_item_url . '">' . $item_hash . '</a>';
 
-        template_header('redirecting to ' . $item_hash);
+        $meta = array('REFRESH' => '0;URL='.$new_item_url);
+
+        template_header('redirecting to ' . $item_hash, $meta);
 	echo('<p>');
         echo($link);
 	echo('</p>');
