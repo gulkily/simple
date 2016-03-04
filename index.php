@@ -279,10 +279,10 @@ if ($action === 'item') {
 
         $meta = array('REFRESH' => '0;URL='.$new_item_url);
 
-        template_header('redirecting to ' . $item_hash, $meta);
-	echo('<p>');
+        template_header('Item created! Redirecting you to ' . $item_hash, $meta);
+	    echo('<p>');
         echo($link);
-	echo('</p>');
+	    echo('</p>');
         template_footer();
     }
 } elseif ($action === 'feed') {
