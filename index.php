@@ -12,9 +12,7 @@ if ($_SERVER['REMOTE_ADDR'] == '::1' || $_SERVER['REMOTE_ADDR'] == '127.0.0.1') 
 }
 
 function sanitize_string($string) {
-    $allowed_chars = "/[^a-zA-Z0-9;,!-:'\"\n\ ]+/";
-
-    $result = preg_replace($allowed_chars, "", $string);
+    $result = preg_replace("/[^[:alnum:][:space:];,!-:'\"]+/u", "x", $string);
 
     return $result;
 }
@@ -220,8 +218,9 @@ function template_submit_form() {
 
 function template_item($item) {
     echo('<p>');
-    echo(nl2br(html_escape($item['text'])));
-    echo('<hr>');
+    echo(trim(nl2br(html_escape($item['text']))));
+    echo('</p>');
+    echo('<p>');
     echo('<a href="./?action=item&amp;item=' . $item['sha1'] . '">' . $item['sha1'] . '</a>');
     echo('</p>');
 }
@@ -305,6 +304,7 @@ if ($action === 'item') {
 
     foreach ($items as $item) {
         template_item($item);
+        echo('<hr>');
     }
 
     template_submit_form();
