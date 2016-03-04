@@ -192,6 +192,10 @@ function html_escape($string) {
 }
 
 function template_header($title, $meta = array()) {
+    $links = array(
+        './' => 'Home',
+    );
+
     echo('<html><head><title>');
     echo(html_escape($title));
     echo('</title>');
@@ -202,7 +206,10 @@ function template_header($title, $meta = array()) {
     }
     echo('</head><body>');
     echo('<h1>' . html_escape($title) . '</h1>');
-    echo('<a href="./">Home</a>');
+    foreach ($links as $url => $text) {
+        echo('<a href="'.$url.'">'.$text.'</a>');
+    }
+    echo('<hr>');
 }
 
 function template_footer() {
