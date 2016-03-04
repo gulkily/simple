@@ -216,9 +216,13 @@ function template_footer() {
     echo('</body></html>');
 }
 
-function template_submit_form() {
+function template_submit_form($item = null) {
     echo('<form action="./" method="post">');
-    echo('<p><textarea name="text" cols="80" rows="5" id="text" tabindex="1"></textarea></p>');
+    echo('<p><textarea name="text" cols="80" rows="24" id="text" tabindex="1">');
+    if ($item) {
+        echo(trim(html_escape($item['text'])));
+    }
+    echo('</textarea></p>');
     echo('<p><input type="submit" value="Submit" tabindex="2"></p>');
     echo('</form>');
 }
@@ -229,6 +233,7 @@ function template_item($item) {
     echo('</p>');
     echo('<p>');
     echo('<a href="./?action=item&amp;item=' . $item['sha1'] . '">' . $item['sha1'] . '</a>');
+    echo(' | <a href="./?action=edit&amp;item=' . $item['sha1'] . '">Revise</a>');
     echo('</p>');
 }
 
@@ -255,6 +260,7 @@ if (!isset($action) && isset($_GET['action'])) {
     switch ($_GET['action']) {
         case 'item':
         case 'feed':
+        case 'edit':
             $action = $_GET['action'];
             break;
         default:
@@ -302,6 +308,18 @@ if ($action === 'item') {
     put_cache('node/' . $client_hash, array($client));
 
     echo(json_encode($items));
+} elseif ($action === 'edit') {
+    template_header('Add new item');
+
+    $item_hash = $_GET['item'];
+    if (is_hash($item_hash) && item_exists($item_hash)) {
+        $item = get_item($item_hash);
+        template_submit_form($item);
+    } else {
+        template_submit_form();
+    }
+
+    template_footer();
 } else {
     build_items_index();
     //@todo this should not be called on every pageload
@@ -315,6 +333,5 @@ if ($action === 'item') {
         echo('<hr>');
     }
 
-    template_submit_form();
     template_footer();
 }
