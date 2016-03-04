@@ -297,6 +297,7 @@ if ($action === 'item') {
     echo(json_encode($items));
 } else {
     build_items_index();
+    //@todo this should not be called on every pageload
 
     $items = get_items();
 
