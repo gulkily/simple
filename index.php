@@ -193,10 +193,16 @@ function html_escape($string) {
     return $string;
 }
 
-function template_header($title) {
+function template_header($title, $meta = array()) {
     echo('<html><head><title>');
     echo(html_escape($title));
-    echo('</title></head><body>');
+    echo('</title>');
+    if (count($meta)) {
+        foreach ($meta as $httpequiv => $content) {
+            echo('<meta http-equiv="'.$httpequiv.'" content="'.$content.'">');
+        }
+    }
+    echo('</head><body>');
     echo('<h1>' . html_escape($title) . '</h1>');
     echo('<a href="./">Home</a>');
 }
