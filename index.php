@@ -126,17 +126,25 @@ function is_hash($string) {
     return (bool) preg_match('/^[0-9a-f]{40}$/i', $string);
 }
 
-function save_item($item_text, $item_source = "localhost") {
+function save_item($item_text, $params = array()) {
     $item_hash = hash_it($item_text);
 
     if (get_cache('item/' . $item_hash)) {
         return $item_hash;
     } else {
-        $item_source = hash_it($item_source);
+        if (isset($params['item_source'])) {
+            $item_source = hash_it($params['item_source']);
+        } else {
+            $item_source = hash_it("localhost");
+        }
 
         $item['text'] = $item_text;
         $item['source'] = $item_source;
         $item['sha1'] = $item_hash;
+
+        if (isset($params['parent_hash']) && is_hash($params['parent_hash'])) {
+            $item['parent_hash'] = $params['parent_hash'];
+        }
 
         put_cache('item/' . $item_hash,  $item);
 
@@ -218,11 +226,14 @@ function template_footer() {
 
 function template_submit_form($item = null) {
     echo('<form action="./" method="post">');
-    echo('<p><textarea name="text" cols="80" rows="24" id="text" tabindex="1">');
+    echo('<p><textarea name="text" cols="80" rows="24       " id="text" tabindex="1">');
     if ($item) {
         echo(trim(html_escape($item['text'])));
     }
     echo('</textarea></p>');
+    if ($item) {
+        echo('<input type=hidden name=parent_hash value='.$item['sha1'].'>');
+    }
     echo('<p><input type="submit" value="Submit" tabindex="2"></p>');
     echo('</form>');
 }
@@ -250,7 +261,11 @@ if (isset($_POST) && count($_POST)) {
         } else {
             $text = sanitize_string($text);
 
-            $item_hash = save_item($text);
+            if ($_POST['parent_hash'] && is_hash($_POST['parent_hash'])) {
+                $item_hash = save_item($text, array('parent_hash' => $_POST['parent_hash']));
+            } else {
+                $item_hash = save_item($text);
+            }
             $action = 'item_new';
         }
     }
