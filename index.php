@@ -195,17 +195,21 @@ function get_items() {
 }
 
 function html_escape($string) {
-    //return htmlspecialchars(trim($string));
-    return $string;
+    return htmlspecialchars(trim($string));
+    //return $string;
 }
 
 function template_header($title, $meta = array()) {
+
+
     $links = array(
         './' => 'Home',
+        './?action=edit' => 'Submit',
+        './?action=about' => 'About',
     );
 
     echo('<html><head><title>');
-    echo(html_escape($title));
+    echo(html_escape(sanitize_string($title)));
     echo('</title>');
     if (count($meta)) {
         foreach ($meta as $httpequiv => $content) {
@@ -213,11 +217,18 @@ function template_header($title, $meta = array()) {
         }
     }
     echo('</head><body>');
-    echo('<h1>' . html_escape($title) . '</h1>');
+    echo('<h1>' . html_escape(sanitize_string($title)) . '</h1>');
+
+    echo('<hr color="black" size="4">');
+
+    $comma = 0;
+    echo('<strong>');
     foreach ($links as $url => $text) {
+        if ($comma) echo ' | '; else $comma = 1;
         echo('<a href="'.$url.'">'.$text.'</a>');
     }
-    echo('<hr>');
+    echo('</strong>');
+    echo('<hr color="black" size="4">');
 }
 
 function template_footer() {
@@ -226,7 +237,7 @@ function template_footer() {
 
 function template_submit_form($item = null) {
     echo('<form action="./" method="post">');
-    echo('<p><textarea name="text" cols="80" rows="24       " id="text" tabindex="1">');
+    echo('<p><textarea name="text" cols="80" rows="24" id="text" tabindex="1">');
     if ($item) {
         echo(trim(html_escape($item['text'])));
     }
@@ -240,7 +251,7 @@ function template_submit_form($item = null) {
 
 function template_item($item) {
     echo('<p>');
-    echo(trim(nl2br(html_escape($item['text']))));
+    echo(trim(nl2br(html_escape(sanitize_string($item['text'])))));
     echo('</p>');
     echo('<p>');
     echo('<a href="./?action=item&amp;item=' . $item['sha1'] . '">' . $item['sha1'] . '</a>');
@@ -341,11 +352,17 @@ if ($action === 'item') {
 
     $items = get_items();
 
-    template_header('index');
+    if ($_SERVER['SERVER_NAME']) {
+        $page_title = htmlspecialchars(sanitize_string($_SERVER['SERVER_NAME']));
+    } else {
+        $page_title = 'index';
+    }
+
+    template_header($page_title);
 
     foreach ($items as $item) {
         template_item($item);
-        echo('<hr>');
+        echo('<hr color="black" size="1">');
     }
 
     template_footer();
