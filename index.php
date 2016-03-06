@@ -12,7 +12,7 @@ if ($_SERVER['REMOTE_ADDR'] == '::1' || $_SERVER['REMOTE_ADDR'] == '127.0.0.1') 
 }
 
 function sanitize_string($string) {
-    $result = preg_replace("/[^[:alnum:][:space:];,!-:'\"=+_()\?]+/u", "x", $string);
+    $result = preg_replace("/[^[:alnum:][:space:];,!-:'\"“”‘’=+_()\?]+/u", "x", $string);
 
     return $result;
 }
@@ -200,7 +200,6 @@ function html_escape($string) {
 }
 
 function template_header($title, $meta = array()) {
-
 
     $links = array(
         './' => 'Home',
