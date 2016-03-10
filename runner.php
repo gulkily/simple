@@ -47,6 +47,18 @@ function get_alpha($string) {
     return preg_replace("/[^a-zA-Z0-9_. ]+/", "", $string);
 }
 
+function find_hash($string) {
+    $bits = preg_split('/[\. \/]/' , $string);
+
+    foreach ($bits as $bit) {
+        if (is_hash($bit)) {
+            return $bit;
+        }
+    }
+
+    return null;
+}
+
 function process_access_log($path = "../logs/access.log") {
     //$path = ACCESS_LOG;
 
@@ -100,8 +112,6 @@ function process_access_log($path = "../logs/access.log") {
         }
     }
 
-//    print_r($vote_box);
-
     if (count($vote_box)) {
         enter_votes($vote_box);
     }
@@ -112,16 +122,16 @@ process_access_log();
 function enter_votes($vote_box) {
     $envelope_name = 'envelope/' . time();
 
-    put_cache($envelope_name . '.prelim', $vote_box);
+    put_cache($envelope_name, $vote_box);
 
-    //print_r($vote_box);
-    foreach ($vote_box as $item => $votes) {
+    foreach ($vote_box as $item_id => $votes) {
         if (count($votes) > 0) {
             $vote_count = intval(count($votes));
 
             if ($vote_count) {
-                if (is_hash($item) && item_exists($item)) {
-                    $item = get_item($item);
+                if (is_hash($item_id) && item_exists($item_id)) {
+                    $item = get_item($item_id);
+
                     if (isset($item['score'])) {
                         $score = intval($item['votes']);
                     } else {
@@ -130,7 +140,13 @@ function enter_votes($vote_box) {
 
                     $item['score'] = $score + $vote_count;
 
+                    //print_r($item);
+
                     save_item($item);
+
+                    $item = get_item($item_id);
+
+                    //print_r($item);
                 }
             }
         }
@@ -244,19 +260,19 @@ function read_cache($filename) {
 function build_items_index() {
     $items = glob(get_cache_filename('item/*'));
 
-    //print_r($items);
-
-    exit;
-
     if ($items) {
+        foreach ($items as $item) {
+            $item_id = find_hash($item);
 
-        foreach ($items as $item_cache_path) {
-            if (isset($item['timestamp']) && isset($item['sha1'])) {
-                $item = read_cache($item_cache_path);
+            $item = get_item($item_id);
 
-                $items_date[$item['timestamp'] . $item['sha1']] = $item;
+            if ($item) {
 
-                save_item($item);
+                if (isset($item['timestamp']) && isset($item['sha1'])) {
+                    $items_date[$item['timestamp'] . $item['sha1']] = $item;
+
+                    //save_item($item);
+                }
             }
         }
 
@@ -288,8 +304,13 @@ function save_item($item) {
 
     $item_hash = hash_it($item['text']);
 
-    if (isset($params['item_source'])) {
-        $item_source = hash_it($params['item_source']);
+    if (isset($item['sha1']) && $item['sha1'] != $item_hash) {
+        $item['parent_hash'] = $item['sha1'];
+        $item['hash'] = $item_hash;
+    }
+
+    if (isset($item['item_source'])) {
+        $item_source = hash_it($item['item_source']);
     } else {
         $item_source = hash_it("localhost");
     }
@@ -306,18 +327,16 @@ function save_item($item) {
         $item['title'] = substr($item['title'], 0, 250) . "[...]";
     }
 
-    //$item['text'] = $item['text'];
+    $item['text'] = $item['text']; // yes, leave it alone
     $item['source'] = $item_source;
     $item['sha1'] = $item_hash;
     $item['title'] = $item['title'];
 
     if (isset($item['parent_hash']) && is_hash($item['parent_hash'])) {
-        $item['parent_hash'] = $item['parent_hash'];
+        $item['parent_hash'] = $item['parent_hash']; // yes, leave it alone
     } else {
-        unset($item['hash']);
+        unset($item['parent_hash']);
     }
-
-    print_r($item);
 
     put_cache('item/' . $item_hash,  $item);
 
@@ -472,9 +491,12 @@ foreach ($items as $item) {
     $html_index .= '<hr color="black" size="1">';
 }
 
-$html_index .= template_footer("<p>To submit a text use GET /?text=.</p>");
-$html_index .= template_footer("<p>To add your node, use GET /?addnode=youraddress</p>");
-$html_index .= template_footer("<p>To vote, share the link.</p>");
+$html_index .= template_footer("
+    <p>To submit a text use GET /?text=(your text).</p>
+    <p>To vote, visit the link.</p>
+    <p>To add your node, use GET /?addnode=youraddress.onion</p>
+");
+
 //$html_index .= template_footer("<!-- To contribute, try one of these: -->");
 
 write_file('index.html', $html_index);
