@@ -288,44 +288,40 @@ function save_item($item) {
 
     $item_hash = hash_it($item['text']);
 
-    if (get_cache('item/' . $item_hash)) {
-        return $item_hash;
+    if (isset($params['item_source'])) {
+        $item_source = hash_it($params['item_source']);
     } else {
-        if (isset($params['item_source'])) {
-            $item_source = hash_it($params['item_source']);
-        } else {
-            $item_source = hash_it("localhost");
-        }
-
-        $item_lines = explode("\n", trim($item['text']));
-        if (count($item_lines) >= 1) {
-            $item['title'] = trim($item_lines[0]);
-        } else {
-            trigger_error("Warning: Tried to save an item, but could  not generate title");
-            $item['title'] = sanitize_string("(no title could be generated)");
-        }
-
-        if (strlen($item['title']) > 255) {
-            $item['title'] = substr($item['title'], 0, 250) . "[...]";
-        }
-
-        //$item['text'] = $item['text'];
-        $item['source'] = $item_source;
-        $item['sha1'] = $item_hash;
-        $item['title'] = $item['title'];
-
-        if (isset($item['parent_hash']) && is_hash($item['parent_hash'])) {
-            $item['parent_hash'] = $item['parent_hash'];
-        } else {
-            unset($item['hash']);
-        }
-
-        print_r($item);
-
-        put_cache('item/' . $item_hash,  $item);
-
-        return $item_hash;
+        $item_source = hash_it("localhost");
     }
+
+    $item_lines = explode("\n", trim($item['text']));
+    if (count($item_lines) >= 1) {
+        $item['title'] = trim($item_lines[0]);
+    } else {
+        trigger_error("Warning: Tried to save an item, but could  not generate title");
+        $item['title'] = sanitize_string("(no title could be generated)");
+    }
+
+    if (strlen($item['title']) > 255) {
+        $item['title'] = substr($item['title'], 0, 250) . "[...]";
+    }
+
+    //$item['text'] = $item['text'];
+    $item['source'] = $item_source;
+    $item['sha1'] = $item_hash;
+    $item['title'] = $item['title'];
+
+    if (isset($item['parent_hash']) && is_hash($item['parent_hash'])) {
+        $item['parent_hash'] = $item['parent_hash'];
+    } else {
+        unset($item['hash']);
+    }
+
+    print_r($item);
+
+    put_cache('item/' . $item_hash,  $item);
+
+    return $item_hash;
 }
 
 function delete_item($item_hash) {
