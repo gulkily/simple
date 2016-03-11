@@ -346,7 +346,7 @@ if ($action === 'item') {
 
     template_footer();
 } else {
-    build_items_index();
+    //build_items_index();
     //@todo this should not be called on every pageload
 
     $items = get_items();

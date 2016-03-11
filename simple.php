@@ -62,7 +62,7 @@ function find_hash($string) {
 function process_access_log($path = "../logs/access.log") {
     //$path = ACCESS_LOG;
 
-    $vote_box = array();
+    $envelope = array();
 
     if ($path) {
         $file = fopen($path, 'r');
@@ -102,7 +102,7 @@ function process_access_log($path = "../logs/access.log") {
 
                     if ($item && count($voting_entities)) {
                         foreach ($voting_entities as $voter) {
-                            $vote_box[$item][$voter] = 1;
+                            $envelope[$item][$voter] = 1;
                         }
                     }
                 }
@@ -112,12 +112,12 @@ function process_access_log($path = "../logs/access.log") {
         }
     }
 
-    if (count($vote_box)) {
-        enter_votes($vote_box);
+    if (count($envelope)) {
+        return $envelope;
     }
 }
 
-process_access_log();
+print_r(process_access_log());
 
 function enter_votes($vote_box) {
     $envelope_name = 'envelope/' . time();
@@ -492,7 +492,6 @@ foreach ($items as $item) {
 }
 
 $html_index .= template_footer("
-    <p>To submit a text use GET /?text=(your text).</p>
     <p>To vote, visit the link.</p>
     <p>To add your node, use GET /?addnode=youraddress.onion</p>
 ");
@@ -505,55 +504,3 @@ $json_items = json_encode($items);
 
 write_file('items.json', $json_items);
 
-exit;
-
-/*
-} elseif ($action === 'item_new') {
-    if (isset($item_hash) && is_hash($item_hash)) {
-        $new_item_url = './?action=item&item=' . $item_hash;
-        $link = '<a href="' . $new_item_url . '">' . $item_hash . '</a>';
-
-        $meta = array('REFRESH' => '0;URL='.$new_item_url);
-
-        template_header('Item created! Redirecting you to ' . $item_hash, $meta);
-        echo('<p>');
-        echo($link);
-        echo('</p>');
-        template_footer();
-    }
-} elseif ($action === 'feed') {
-} elseif ($action === 'edit') {
-    template_header('Add new item');
-
-    $item_hash = $_GET['item'];
-    if (is_hash($item_hash) && item_exists($item_hash)) {
-        $item = get_item($item_hash);
-        template_submit_form($item);
-    } else {
-        template_submit_form();
-    }
-
-    template_footer();
-} else {
-    build_items_index();
-    //@todo this should not be called on every pageload
-
-    $items = get_items();
-
-    if ($_SERVER['SERVER_NAME']) {
-        $page_title = htmlspecialchars(sanitize_string($_SERVER['SERVER_NAME']));
-    } else {
-        $page_title = 'index';
-    }
-
-    template_header($page_title);
-
-    foreach ($items as $item) {
-        template_item($item);
-        echo('<hr color="black" size="1">');
-    }
-
-    template_footer();
-}
-
-*/
