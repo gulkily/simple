@@ -572,6 +572,11 @@ function get_nodes() {
 // the fun begins here
 ///////////////////////////////////
 
+if ($argv[1] === 'addnode' && isset($argv[2]) && is_onion($argv[2])) {
+    add_node($argv[2]);
+    exit;
+}
+
 $nodes = get_nodes();
 
 foreach ($nodes as $node) {
