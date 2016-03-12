@@ -76,7 +76,7 @@ function process_access_log($path = "../logs/access.log") {
                 while (($line = fgets($file)) !== false) {
                     // process the line read.
 
-                    $bits = preg_split('/[\. \/]/' , $line);
+                    $bits = preg_split('/[\. \/=]/' , $line);
                     // @todo replace the regex engine with something simpler
 
                     $ip = $bits[0];
@@ -98,6 +98,10 @@ function process_access_log($path = "../logs/access.log") {
                             if (strlen($bit) >= 5) {
                                 $voting_entities [] = $bit;
                             }
+                        }
+
+                        if (is_onion($bit) && strpos($line, "nodes.json") !== false) {
+                            add_node($bit);
                         }
                     }
 
