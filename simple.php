@@ -557,6 +557,7 @@ function add_node($node_address) {
     }
 }
 
+
 function get_nodes() {
     $nodes = get_cache_array('node/*');
 
