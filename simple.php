@@ -580,19 +580,23 @@ $items = get_items();
 
 $html_index = template_header('index');
 
-foreach ($items as $item) {
-    // do an item page
-    $html  = template_header($item['sha1']); //@todo change this to title later
-    $html .= template_item($item);
-    $html .= template_footer();
+if (count($items)) {
+    foreach ($items as $item) {
+        // do an item page
+        $html  = template_header($item['sha1']); //@todo change this to title later
+        $html .= template_item($item);
+        $html .= template_footer();
 
-    write_file($item['sha1'] . '.html', $html);
+        write_file($item['sha1'] . '.html', $html);
 
-    /////////////
+        /////////////
 
-    // add to the index buffer
-    $html_index .= template_item($item);
-    $html_index .= '<hr color="black" size="1">';
+        // add to the index buffer
+        $html_index .= template_item($item);
+        $html_index .= '<hr color="black" size="1">';
+    }
+} else {
+    $html_index .= '<p>There are no items in the database at this time.</p>';
 }
 
 $html_index .= template_footer("
