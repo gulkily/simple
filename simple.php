@@ -318,52 +318,58 @@ function is_hash($string) {
 }
 
 function save_item($item) {
-    $item['text'] = (string) $item['text'];
-    if (!isset($item['text'])) {
-        $item['text'] = sanitize_string('Hello world! No text was passed when creating this item, so this text has been substituted.');
+    if (is_array($item) && isset($item['text'])) {
+    // $item should at minimum be an array and have a text
+
+        $item['text'] = (string) $item['text'];
+        if (!isset($item['text'])) {
+            $item['text'] = sanitize_string('Hello world! No text was passed when creating this item, so this text has been substituted.');
+        } else {
+            $item['text'] = sanitize_string($item['text']);
+        }
+
+        $item_hash = hash_it($item['text']);
+
+        if (isset($item['sha1']) && $item['sha1'] != $item_hash) {
+            $item['parent_hash'] = $item['sha1'];
+            $item['hash'] = $item_hash;
+        }
+
+        if (isset($item['item_source'])) {
+            $item_source = hash_it($item['item_source']);
+        } else {
+            $item_source = hash_it("localhost");
+        }
+
+        $item_lines = explode("\n", trim($item['text']));
+        if (count($item_lines) >= 1) {
+            $item['title'] = trim($item_lines[0]);
+        } else {
+            trigger_error("Warning: Tried to save an item, but could  not generate title");
+            $item['title'] = sanitize_string("(no title could be generated)");
+        }
+
+        if (strlen($item['title']) > 255) {
+            $item['title'] = substr($item['title'], 0, 250) . "[...]";
+        }
+
+        $item['text'] = $item['text']; // yes, leave it alone
+        $item['source'] = $item_source;
+        $item['sha1'] = $item_hash;
+        $item['title'] = $item['title'];
+
+        if (isset($item['parent_hash']) && is_hash($item['parent_hash'])) {
+            $item['parent_hash'] = $item['parent_hash']; // yes, leave it alone
+        } else {
+            unset($item['parent_hash']);
+        }
+
+        put_cache('item/' . $item_hash,  $item);
+
+        return $item_hash;
     } else {
-        $item['text'] = sanitize_string($item['text']);
+        return null;
     }
-
-    $item_hash = hash_it($item['text']);
-
-    if (isset($item['sha1']) && $item['sha1'] != $item_hash) {
-        $item['parent_hash'] = $item['sha1'];
-        $item['hash'] = $item_hash;
-    }
-
-    if (isset($item['item_source'])) {
-        $item_source = hash_it($item['item_source']);
-    } else {
-        $item_source = hash_it("localhost");
-    }
-
-    $item_lines = explode("\n", trim($item['text']));
-    if (count($item_lines) >= 1) {
-        $item['title'] = trim($item_lines[0]);
-    } else {
-        trigger_error("Warning: Tried to save an item, but could  not generate title");
-        $item['title'] = sanitize_string("(no title could be generated)");
-    }
-
-    if (strlen($item['title']) > 255) {
-        $item['title'] = substr($item['title'], 0, 250) . "[...]";
-    }
-
-    $item['text'] = $item['text']; // yes, leave it alone
-    $item['source'] = $item_source;
-    $item['sha1'] = $item_hash;
-    $item['title'] = $item['title'];
-
-    if (isset($item['parent_hash']) && is_hash($item['parent_hash'])) {
-        $item['parent_hash'] = $item['parent_hash']; // yes, leave it alone
-    } else {
-        unset($item['parent_hash']);
-    }
-
-    put_cache('item/' . $item_hash,  $item);
-
-    return $item_hash;
 }
 
 function delete_item($item_hash) {
@@ -509,11 +515,13 @@ function get_node_items($node_address) {
 
         $result = curl_exec($curl);
 
-        $items = json_decode($result);
+        $items = json_decode($result, true);
 
         if (count($items)) {
             foreach ($items as $item) {
-                save_item($item);
+                if (isset($item['sha1']) && isset($item['text'])) {
+                    save_item($item);
+                }
             }
         }
 
@@ -522,6 +530,12 @@ function get_node_items($node_address) {
         curl_setopt($curl, CURLOPT_URL, $url);
 
         $result = curl_exec($curl);
+
+        $nodes = json_decode($result, true);
+
+        foreach ($nodes as $node) {
+            //@todo finish it
+        }
     }
 }
 
