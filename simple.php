@@ -60,6 +60,7 @@ function find_hash($string) {
 }
 
 function process_access_log($path = "../logs/access.log") {
+    // doesn't remove the file yet. this needs to happen before it's usable.
     //$path = ACCESS_LOG;
 
     $envelope = array();
@@ -116,8 +117,6 @@ function process_access_log($path = "../logs/access.log") {
         return $envelope;
     }
 }
-
-print_r(process_access_log());
 
 function enter_votes($vote_box) {
     $envelope_name = 'envelope/' . time();
@@ -246,7 +245,8 @@ function read_cache($filename) {
             $results_array = unserialize($file_contents);
             fclose($file);
 
-            $results_array['timestamp'] = filemtime($filename);
+            //$results_array['timestamp'] = filemtime($filename);
+            // @todo this still needs fixing
 
             return $results_array;
         } else {
@@ -256,6 +256,29 @@ function read_cache($filename) {
         return null;
     }
 }
+
+function get_cache_array($glob) {
+    $cache_list = glob(get_cache_filename($glob));
+
+    $cache_array = array();
+
+    if ($cache_list) {
+        foreach ($cache_list as $cache) {
+            $cache = substr($cache, 8);
+            // @todo get rid of magic number
+            // this should just strip the cache_dir prefix from it
+
+            $item = get_cache($cache);
+
+            if ($item) {
+                $cache_array[] = $item;
+            }
+        }
+    }
+
+    return $cache_array;
+}
+
 
 function build_items_index() {
     $items = glob(get_cache_filename('item/*'));
@@ -466,9 +489,64 @@ function template_item($item) {
     return $html;
 }
 
+function get_node_items($node_address) {
+    // @todo sanitize the node address
+    //$url = "http://qdb.us/ip";
+
+    $curl = curl_init();
+
+    if ($curl) {
+        $url = "http://" . $node_address . "/items.json";
+
+        curl_setopt($curl, CURLOPT_USERAGENT,'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.8.1.13) Gecko/20080311 Firefox/2.0.0.13');
+        curl_setopt($curl, CURLOPT_URL, $url);
+        curl_setopt($curl, CURLOPT_TIMEOUT, 60);
+        curl_setopt($curl, CURLOPT_HTTPGET, 1);
+        curl_setopt($curl, CURLOPT_RETURNTRANSFER, TRUE);
+        curl_setopt($curl, CURLOPT_PROXY, 'http://127.0.0.1:9050/');
+        curl_setopt($curl, CURLOPT_PROXYTYPE, 7);
+        curl_setopt($curl, CURLOPT_FOLLOWLOCATION, TRUE);
+
+        $result = curl_exec($curl);
+
+        $items = json_decode($result);
+
+        if (count($items)) {
+            foreach ($items as $item) {
+                save_item($item);
+            }
+        }
+
+        $url = "http://" . $node_address . "/nodes.json";
+
+        curl_setopt($curl, CURLOPT_URL, $url);
+
+        $result = curl_exec($curl);
+    }
+}
+
+function add_node($node_address) {
+    $node['address'] = $node_address;
+    // @todo sanitize
+
+    put_cache('node/'.$node_address, $node_address);
+}
+
+function get_nodes() {
+    $nodes = get_cache_array('node/*');
+
+    return $nodes;
+}
+
 ////////////////////////////////////
 // the fun begins here
 ///////////////////////////////////
+
+$nodes = get_nodes();
+
+foreach ($nodes as $node) {
+    get_node_items($node);
+}
 
 build_items_index();
 
