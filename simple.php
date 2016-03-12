@@ -497,7 +497,10 @@ function template_item($item) {
 
 function get_node_items($node_address) {
     // @todo sanitize the node address
-    //$url = "http://qdb.us/ip";
+
+    if (!is_onion($node_address)) {
+        return null;
+    }
 
     $curl = curl_init();
 
@@ -533,17 +536,25 @@ function get_node_items($node_address) {
 
         $nodes = json_decode($result, true);
 
-        foreach ($nodes as $node) {
-            //@todo finish it
+        if (count($nodes)) {
+            foreach ($nodes as $node) {
+
+            }
         }
     }
 }
 
-function add_node($node_address) {
-    $node['address'] = $node_address;
-    // @todo sanitize
+function is_onion($string) {
+    return (bool) preg_match('/^[0-9a-f]{16}\.onion$/i', $string);
+}
 
-    put_cache('node/'.$node_address, $node_address);
+function add_node($node_address) {
+    if (is_onion($node_address)) {
+        $node['address'] = $node_address;
+        // @todo sanitize
+
+        put_cache('node/'.$node_address, $node_address);
+    }
 }
 
 function get_nodes() {
@@ -596,3 +607,6 @@ $json_items = json_encode($items);
 
 write_file('items.json', $json_items);
 
+$json_nodes = json_encode($nodes);
+
+write_file('nodes.json', $json_nodes);
